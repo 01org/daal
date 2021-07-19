@@ -16,3 +16,12 @@ bazel-*
 
 # Bazel directories
 bazel-*
+
+# Setuptools directories
+python/**/build
+python/**/dist
+python/**/__pycache__
+*.egg-info
+
+# Binaries
+*.so
