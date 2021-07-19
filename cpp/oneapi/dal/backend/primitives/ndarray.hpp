@@ -484,7 +484,7 @@ public:
         ONEDAL_ASSERT(source_ptr != nullptr);
         ONEDAL_ASSERT(source_count > 0);
         ONEDAL_ASSERT(source_count <= this->get_count());
-        return dal::backend::copy(this->get_mutable_data(), source_ptr, source_count);
+        dal::backend::copy(this->get_mutable_data(), source_ptr, source_count);
     }
 
 #ifdef ONEDAL_DATA_PARALLEL

@@ -47,7 +47,7 @@ void sym_eigvals_impl(Float* a, std::int64_t n, std::int64_t lda, Float* w) {
     Float* work_ptr = work.get_mutable_data();
     std::int64_t* iwork_ptr = iwork.get_mutable_data();
 
-    std::int64_t info;
+    std::int64_t info = 0;
     syevd('V', 'U', n, a, lda, w, work_ptr, lwork, iwork_ptr, liwork, info);
 
     if (info != 0) {

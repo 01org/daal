@@ -70,8 +70,8 @@ inline bool alloc_kind_requires_copy(alloc_kind src_alloc_kind, alloc_kind dst_a
 #else
     ONEDAL_ASSERT(src_alloc_kind == alloc_kind::host);
     ONEDAL_ASSERT(dst_alloc_kind == alloc_kind::host);
-    return false;
 #endif
+    return false;
 }
 
 template <typename T>

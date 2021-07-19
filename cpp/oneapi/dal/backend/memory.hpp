@@ -25,7 +25,7 @@ void memcpy(void* dest, const void* src, std::int64_t size);
 template <typename T>
 inline void copy(T* dest, const T* src, std::int64_t count) {
     ONEDAL_ASSERT_MUL_OVERFLOW(std::int64_t, sizeof(T), count);
-    return memcpy(dest, src, sizeof(T) * count);
+    memcpy(dest, src, sizeof(T) * count);
 }
 
 #ifdef ONEDAL_DATA_PARALLEL

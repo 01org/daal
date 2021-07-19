@@ -44,14 +44,16 @@ private:
 };
 
 template <typename T>
-inline auto make_default_delete(const detail::default_host_policy& policy) {
+inline auto make_default_delete(const detail::default_host_policy& policy)
+    -> default_delete<T, detail::default_host_policy> {
     return default_delete<T, detail::default_host_policy>{ policy };
 }
 
 #ifdef ONEDAL_DATA_PARALLEL
 
 template <typename T>
-inline auto make_default_delete(const detail::data_parallel_policy& policy) {
+inline auto make_default_delete(const detail::data_parallel_policy& policy)
+    -> default_delete<T, detail::data_parallel_policy> {
     return default_delete<T, detail::data_parallel_policy>{ policy };
 }
 

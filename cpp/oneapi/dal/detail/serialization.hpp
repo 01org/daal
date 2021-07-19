@@ -198,7 +198,7 @@ public:
 
     template <typename T>
     T pop() {
-        T value;
+        T value{};
         (*this)(value);
         return value;
     }
