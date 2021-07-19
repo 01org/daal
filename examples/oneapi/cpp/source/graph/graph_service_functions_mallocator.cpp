@@ -20,10 +20,6 @@
 #include "oneapi/dal/graph/service_functions.hpp"
 #include "oneapi/dal/io/csv.hpp"
 
-namespace dal = oneapi::dal;
-
-using namespace dal;
-
 #include <stdlib.h> // size_t, malloc, free
 #include <new> // bad_alloc, bad_array_new_length
 template <class T>
@@ -59,71 +55,47 @@ struct Mallocator {
     }
 };
 
-void print_graph_info(preview::undirected_adjacency_vector_graph<> &graph) {
-    using graph_t = preview::undirected_adjacency_vector_graph<>;
-    std::cout << "Number of vertices: " << dal::preview::get_vertex_count(graph) << std::endl;
-    std::cout << "Number of edges: " << dal::preview::get_edge_count(graph) << std::endl;
+namespace dal = oneapi::dal;
 
-    dal::preview::vertex_edge_size_type<graph_t> vertex_id = 0;
-    std::cout << "Degree of " << vertex_id << ": "
-              << dal::preview::get_vertex_degree(graph, vertex_id) << std::endl;
-
-    for (dal::preview::vertex_edge_size_type<graph_t> j = 0;
-         j < dal::preview::get_vertex_count(graph);
-         ++j) {
-        std::cout << "Neighbors of " << j << ": ";
-        const auto neigh = dal::preview::get_vertex_neighbors(graph, j);
-        for (auto i = neigh.first; i != neigh.second; ++i) {
-            std::cout << *i << " ";
-        }
-        std::cout << std::endl;
-    }
-    return;
-}
+using namespace dal;
 
 int main(int argc, char **argv) {
     const auto filename = get_data_path("graph.csv");
 
-    { const auto x_test = dal::read<dal::table>(dal::csv::data_source{ filename }); }
-
     using graph_t = preview::undirected_adjacency_vector_graph<>;
+
     Mallocator<char> mallocator;
+    auto read_args = csv::read_args<graph_t, Mallocator<char>>{ mallocator }.set_read_mode(
+        preview::read_mode::edge_list);
 
     {
-        auto read_args = csv::read_args<graph_t, Mallocator<char>>{ mallocator }.set_read_mode(
-            preview::read_mode::edge_list);
         auto graph = read<graph_t, csv::data_source, csv::read_args<graph_t, Mallocator<char>>>(
             csv::data_source{ filename },
             std::move(read_args));
-        print_graph_info(graph);
     }
-
-    {
-        auto read_args = csv::read_args<graph_t, Mallocator<char>>{ mallocator }.set_read_mode(
-            preview::read_mode::edge_list);
-        auto graph = read<graph_t>(csv::data_source{ filename }, std::move(read_args));
-        print_graph_info(graph);
-    }
-
-    {
-        auto graph =
-            read<graph_t>(csv::data_source{ filename },
-                          csv::read_args<graph_t, Mallocator<char>>{ mallocator }.set_read_mode(
-                              preview::read_mode::edge_list));
-        print_graph_info(graph);
-    }
-
-    { auto graph = read<graph_t>(csv::data_source{ filename }, preview::read_mode::edge_list); }
-
-    // auto graph = read<graph_t>(csv::data_source{ filename }, mallocator);
-    // auto graph =
-    //     read<graph_t>(csv::data_source{ filename }, mallocator, preview::read_mode::edge_list);
-
-    // print_graph_info(graph);
-    // }
-
     // {
-    //     auto graph = read<graph_t>(csv::data_source{ filename });
-    //     print_graph_info(graph);
+    //     auto graph = read<graph_t, csv::data_source, csv::read_args<graph_t, Mallocator<char>>>(
+    //         csv::data_source{ filename },
+    //         mallocator,
+    //         read_mode::edge_list);
     // }
+
+    // auto graph = read<graph_t>(csv::data_source{ filename });
+
+    // std::cout << "Number of vertices: " << preview::get_vertex_count(graph) << std::endl;
+    // std::cout << "Number of edges: " << preview::get_edge_count(graph) << std::endl;
+
+    // preview::vertex_type<graph_t> vertex_id = 0;
+    // std::cout << "Degree of " << vertex_id << ": " << preview::get_vertex_degree(graph, vertex_id)
+    //           << std::endl;
+
+    // for (preview::vertex_size_type<graph_t> i = 0; i < preview::get_vertex_count(graph); ++i) {
+    //     std::cout << "Neighbors of " << i << ": ";
+    //     const auto neigh = preview::get_vertex_neighbors(graph, i);
+    //     for (auto u = neigh.first; u != neigh.second; ++u) {
+    //         std::cout << *u << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    return 0;
 }

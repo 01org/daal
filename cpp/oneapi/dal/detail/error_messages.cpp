@@ -106,6 +106,7 @@ MSG(unimplemented_sorting_procedure, "Unimplemented sorting procedure")
 
 /* IO */
 MSG(file_not_found, "File not found")
+MSG(unsupported_read_mode, "Unsupported read mode")
 
 /* Serialization */
 MSG(object_is_not_serializable, "Object is not serializable")

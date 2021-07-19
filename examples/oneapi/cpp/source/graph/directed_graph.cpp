@@ -19,8 +19,7 @@
 #include "example_util/utils.hpp"
 #include "oneapi/dal/graph/service_functions.hpp"
 #include "oneapi/dal/graph/directed_adjacency_vector_graph.hpp"
-#include "oneapi/dal/io/graph_csv_data_source.hpp"
-#include "oneapi/dal/io/load_graph.hpp"
+#include "oneapi/dal/io/csv.hpp"
 
 using namespace std;
 
@@ -28,31 +27,28 @@ namespace dal = oneapi::dal;
 
 int main(int argc, char** argv) {
     const auto filename = get_data_path("weighted_edge_list.csv");
-    const dal::preview::graph_csv_data_source ds(filename);
 
     using vertex_type = int32_t;
     using weight_type = double;
-    using my_graph_type = dal::preview::directed_adjacency_vector_graph<vertex_type, weight_type>;
+    using graph_t = dal::preview::directed_adjacency_vector_graph<vertex_type, weight_type>;
 
-    const dal::preview::load_graph::
-        descriptor<dal::preview::weighted_edge_list<vertex_type, weight_type>, my_graph_type>
-            d;
-    const auto my_graph = dal::preview::load_graph::load(d, ds);
+    auto graph = dal::read<graph_t>(dal::csv::data_source{ filename },
+                                    dal::preview::read_mode::weighted_edge_list);
 
-    std::cout << "Number of vertices: " << dal::preview::get_vertex_count(my_graph) << std::endl;
-    std::cout << "Number of edges: " << dal::preview::get_edge_count(my_graph) << std::endl;
+    std::cout << "Number of vertices: " << dal::preview::get_vertex_count(graph) << std::endl;
+    std::cout << "Number of edges: " << dal::preview::get_edge_count(graph) << std::endl;
 
-    dal::preview::vertex_outward_edge_size_type<my_graph_type> vertex_id = 0;
+    dal::preview::vertex_outward_edge_size_type<graph_t> vertex_id = 0;
     std::cout << "Degree of " << vertex_id << ": "
-              << dal::preview::get_vertex_outward_degree(my_graph, vertex_id) << std::endl;
+              << dal::preview::get_vertex_outward_degree(graph, vertex_id) << std::endl;
 
-    for (dal::preview::vertex_outward_edge_size_type<my_graph_type> j = 0;
-         j < dal::preview::get_vertex_count(my_graph);
+    for (dal::preview::vertex_outward_edge_size_type<graph_t> j = 0;
+         j < dal::preview::get_vertex_count(graph);
          ++j) {
         std::cout << "Neighbors of " << j << ": ";
-        const auto neigh = dal::preview::get_vertex_outward_neighbors(my_graph, j);
+        const auto neigh = dal::preview::get_vertex_outward_neighbors(graph, j);
         for (auto i = neigh.first; i != neigh.second; ++i) {
-            std::cout << *i << "-" << dal::preview::get_edge_value(my_graph, j, *i) << " ";
+            std::cout << *i << "-" << dal::preview::get_edge_value(graph, j, *i) << " ";
         }
         std::cout << std::endl;
     }

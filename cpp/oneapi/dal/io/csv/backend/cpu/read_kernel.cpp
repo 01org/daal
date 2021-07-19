@@ -27,6 +27,7 @@
 #include "oneapi/dal/backend/interop/error_converter.hpp"
 #include "oneapi/dal/backend/interop/table_conversion.hpp"
 #include "oneapi/dal/io/csv/backend/cpu/read_kernel.hpp"
+#include "oneapi/dal/io/csv/backend/cpu/read_graph.hpp"
 #include "oneapi/dal/table/common.hpp"
 
 namespace oneapi::dal::csv::backend {
@@ -55,5 +56,4 @@ table read_kernel_cpu<table>::operator()(const dal::backend::context_cpu& ctx,
     return oneapi::dal::backend::interop::convert_from_daal_homogen_table<DAAL_DATA_TYPE>(
         daal_data_source.getNumericTable());
 }
-
 } // namespace oneapi::dal::csv::backend

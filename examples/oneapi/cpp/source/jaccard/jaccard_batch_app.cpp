@@ -23,11 +23,12 @@
 #include "oneapi/dal/algo/jaccard.hpp"
 #include "oneapi/dal/graph/service_functions.hpp"
 #include "oneapi/dal/graph/undirected_adjacency_vector_graph.hpp"
-#include "oneapi/dal/io/graph_csv_data_source.hpp"
-#include "oneapi/dal/io/load_graph.hpp"
+#include "oneapi/dal/io/csv.hpp"
 #include "oneapi/dal/table/homogen.hpp"
 
 namespace dal = oneapi::dal;
+
+using namespace dal;
 
 /// Computes Jaccard similarity coefficients for the graph. The upper triangular
 /// matrix is processed only as it is symmetic for undirected graph.
@@ -44,9 +45,8 @@ int main(int argc, char **argv) {
     // load the graph
     const auto filename = get_data_path("graph.csv");
 
-    const dal::preview::graph_csv_data_source ds(filename);
-    const dal::preview::load_graph::descriptor<> d;
-    const auto graph = dal::preview::load_graph::load(d, ds);
+    using graph_t = preview::undirected_adjacency_vector_graph<>;
+    const auto graph = read<graph_t>(csv::data_source{ filename });
 
     // set the block sizes for Jaccard similarity block processing
     const std::int32_t block_row_count = 2;
@@ -67,11 +67,11 @@ void vertex_similarity_block_processing(const Graph &g,
                                         std::int32_t block_row_count,
                                         std::int32_t block_column_count) {
     // create caching builders for all threads
-    std::vector<dal::preview::jaccard::caching_builder> processing_blocks(
+    std::vector<preview::jaccard::caching_builder> processing_blocks(
         tbb::this_task_arena::max_concurrency());
 
     // compute the number of vertices in graph
-    const std::int32_t vertex_count = dal::preview::get_vertex_count(g);
+    const std::int32_t vertex_count = preview::get_vertex_count(g);
 
     // compute the number of rows
     std::int32_t row_count = vertex_count / block_row_count;
@@ -109,14 +109,12 @@ void vertex_similarity_block_processing(const Graph &g,
                                 column_begin + (j + 1) * block_column_count;
 
                             // set block ranges for the vertex similarity algorithm
-                            const auto jaccard_desc =
-                                dal::preview::jaccard::descriptor<>().set_block(
-                                    { row_range_begin, std::min(row_range_end, vertex_count) },
-                                    { column_range_begin,
-                                      std::min(column_range_end, vertex_count) });
+                            const auto jaccard_desc = preview::jaccard::descriptor<>().set_block(
+                                { row_range_begin, std::min(row_range_end, vertex_count) },
+                                { column_range_begin, std::min(column_range_end, vertex_count) });
 
                             // compute Jaccard coefficients for the block
-                            dal::preview::vertex_similarity(
+                            preview::vertex_similarity(
                                 jaccard_desc,
                                 g,
                                 processing_blocks[tbb::this_task_arena::current_thread_index()]);

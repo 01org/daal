@@ -24,12 +24,30 @@ namespace oneapi::dal::csv {
 template <>
 class detail::v1::read_args_impl<table> : public base {
 public:
-    read_args_impl() {}
+    read_args_impl(preview::read_mode mode = preview::read_mode::table) : mode(mode) {
+        if (mode != preview::read_mode::table)
+            throw invalid_argument(dal::detail::error_messages::unsupported_read_mode());
+    }
+
+    preview::read_mode mode;
 };
 
 namespace v1 {
 
-read_args<table>::read_args() : impl_(new detail::read_args_impl<table>()) {}
+read_args<table, std::allocator<char>>::read_args() : impl_(new detail::read_args_impl<table>()) {}
+
+read_args<table, std::allocator<char>>::read_args(preview::read_mode mode)
+        : impl_(new detail::read_args_impl<table>(mode)) {}
+
+preview::read_mode read_args<table, std::allocator<char>>::get_read_mode() {
+    return impl_->mode;
+}
+
+void read_args<table, std::allocator<char>>::set_read_mode_impl(preview::read_mode mode) {
+    if (mode != preview::read_mode::table)
+        throw invalid_argument(dal::detail::error_messages::unsupported_read_mode());
+    impl_->mode = mode;
+}
 
 } // namespace v1
 } // namespace oneapi::dal::csv

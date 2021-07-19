@@ -23,18 +23,12 @@ namespace v1 {
 
 using dal::detail::host_policy;
 
-template <typename Object>
-struct read_ops_dispatcher<Object, host_policy> {
-    Object operator()(const host_policy& policy,
-                      const data_source_base& ds,
-                      const read_args<Object>& args) const {
-        using kernel_dispatcher_t =
-            dal::backend::kernel_dispatcher<backend::read_kernel_cpu<Object>>;
-        return kernel_dispatcher_t()(policy, ds, args);
-    }
-};
-
-template struct ONEDAL_EXPORT read_ops_dispatcher<table, host_policy>;
+table read_ops_dispatcher<table, host_policy>::operator()(const host_policy& policy,
+                                                          const data_source_base& ds,
+                                                          const read_args<table>& args) const {
+    using kernel_dispatcher_t = dal::backend::kernel_dispatcher<backend::read_kernel_cpu<table>>;
+    return kernel_dispatcher_t()(policy, ds, args);
+}
 
 } // namespace v1
 } // namespace oneapi::dal::csv::detail

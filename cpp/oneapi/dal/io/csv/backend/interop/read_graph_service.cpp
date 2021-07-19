@@ -14,27 +14,17 @@
 * limitations under the License.
 *******************************************************************************/
 
-#pragma once
+#include "oneapi/dal/io/csv/detail/read_graph_service.hpp"
+#include "src/externals/service_service.h"
 
-#include "oneapi/dal/detail/common.hpp"
+namespace oneapi::dal::preview::read_graph::detail {
 
-namespace oneapi::dal::preview::load_graph::detail {
-
-ONEDAL_EXPORT std::int32_t daal_string_to_int(const char *nptr, char **endptr);
-
-ONEDAL_EXPORT double daal_string_to_double(const char *nptr, char **endptr);
-
-template <typename T>
-inline T daal_string_to(const char *nptr, char **endptr);
-
-template <>
-inline std::int32_t daal_string_to(const char *nptr, char **endptr) {
-    return daal_string_to_int(nptr, endptr);
+ONEDAL_EXPORT std::int32_t daal_string_to_int(const char* nptr, char** endptr) {
+    return daal::internal::Service<>::serv_string_to_int(nptr, endptr);
 }
 
-template <>
-inline double daal_string_to(const char *nptr, char **endptr) {
-    return daal_string_to_double(nptr, endptr);
+ONEDAL_EXPORT double daal_string_to_double(const char* nptr, char** endptr) {
+    return daal::internal::Service<>::serv_string_to_double(nptr, endptr);
 }
 
-} // namespace oneapi::dal::preview::load_graph::detail
+} // namespace oneapi::dal::preview::read_graph::detail

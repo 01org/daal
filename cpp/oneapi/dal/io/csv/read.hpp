@@ -23,9 +23,16 @@
 namespace oneapi::dal::detail {
 namespace v1 {
 
-template <typename table, typename DataSource>
-struct read_ops<table, DataSource, dal::csv::detail::data_source_tag>
-        : dal::csv::detail::read_ops<table, DataSource> {};
+template <typename Object, typename DataSource, typename Tag, typename... Options>
+struct read_ops;
+
+template <typename Object, typename DataSource, typename Head>
+struct read_ops<Object, DataSource, dal::csv::detail::data_source_tag, Head>
+        : dal::csv::detail::read_ops<Object, DataSource, Head> {};
+
+template <typename Object, typename DataSource>
+struct read_ops<Object, DataSource, dal::csv::detail::data_source_tag>
+        : dal::csv::detail::read_ops<Object, DataSource> {};
 
 } // namespace v1
 } // namespace oneapi::dal::detail

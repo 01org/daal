@@ -130,6 +130,7 @@ public:
 
     /* I/O */
     MSG(file_not_found);
+    MSG(unsupported_read_mode);
 
     /* Serialization */
     MSG(object_is_not_serializable);

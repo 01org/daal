@@ -22,7 +22,7 @@
 
 #include "oneapi/dal/common.hpp"
 #include "oneapi/dal/detail/common.hpp"
-#include "oneapi/dal/io/detail/common.hpp"
+#include "oneapi/dal/io/csv/detail/graph_service.hpp"
 
 namespace oneapi::dal::preview {
 /// Type of graph representation as an edge list

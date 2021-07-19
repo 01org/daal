@@ -20,6 +20,7 @@
 
 #include "oneapi/dal/detail/common.hpp"
 #include "oneapi/dal/table/common.hpp"
+#include "oneapi/dal/graph/common.hpp"
 
 namespace oneapi::dal::csv {
 
@@ -101,3 +102,7 @@ public:
 using v1::data_source;
 
 } // namespace oneapi::dal::csv
+
+namespace oneapi::dal::preview {
+enum class read_mode { table, edge_list, weighted_edge_list };
+} // namespace oneapi::dal::preview

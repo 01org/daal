@@ -19,8 +19,7 @@
 #include "example_util/utils.hpp"
 #include "oneapi/dal/algo/triangle_counting.hpp"
 #include "oneapi/dal/graph/undirected_adjacency_vector_graph.hpp"
-#include "oneapi/dal/io/graph_csv_data_source.hpp"
-#include "oneapi/dal/io/load_graph.hpp"
+#include "oneapi/dal/io/csv.hpp"
 
 namespace dal = oneapi::dal;
 using namespace dal::preview::triangle_counting;
@@ -29,9 +28,8 @@ int main(int argc, char** argv) {
     const auto filename = get_data_path("graph.csv");
 
     // read the graph
-    const dal::preview::graph_csv_data_source ds(filename);
-    const dal::preview::load_graph::descriptor<> d;
-    const auto my_graph = dal::preview::load_graph::load(d, ds);
+    using graph_t = dal::preview::undirected_adjacency_vector_graph<>;
+    auto graph = dal::read<graph_t>(csv::data_source{ filename });
     std::allocator<char> alloc;
     // set algorithm parameters
     const auto tc_desc =
@@ -39,7 +37,7 @@ int main(int argc, char** argv) {
             alloc);
 
     // compute local and global triangles
-    const auto result_vertex_ranking = dal::preview::vertex_ranking(tc_desc, my_graph);
+    const auto result_vertex_ranking = dal::preview::vertex_ranking(tc_desc, graph);
 
     // extract the result
     std::cout << "Global triangles: " << result_vertex_ranking.get_global_rank() << std::endl;
