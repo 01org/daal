@@ -183,6 +183,16 @@ Status DBSCANDistrStep3Kernel<algorithmFPType, method, cpu>::compute(const DataC
 
     DAAL_OVERFLOW_CHECK_BY_MULTIPLICATION(size_t, totalNRows, sizeof(algorithmFPType));
 
+    if (totalNRows == 0)
+    {
+        WriteRows<algorithmFPType, cpu> splitRows(ntSplit, 0, 1);
+        DAAL_CHECK_BLOCK_STATUS(splitRows);
+        algorithmFPType * const split = splitRows.get();
+        split[0]                      = 0;
+        split[1]                      = (algorithmFPType)(-1);
+        return Status();
+    }
+
     TArray<algorithmFPType, cpu> splitColumnArray(totalNRows);
     DAAL_CHECK_MALLOC(splitColumnArray.get());
     algorithmFPType * const splitColumn = splitColumnArray.get();
@@ -235,7 +245,8 @@ Status DBSCANDistrStep4Kernel<algorithmFPType, method, cpu>::compute(const DataC
 
     int result = 0;
 
-    size_t splitDim = -1;
+    size_t splitDim   = -1;
+    size_t valuedPart = 0;
     for (size_t part = 0; part < nBlocks; part++)
     {
         NumericTablePtr ntPartialSplit = NumericTable::cast((*dcPartialSplits)[part]);
@@ -243,7 +254,13 @@ Status DBSCANDistrStep4Kernel<algorithmFPType, method, cpu>::compute(const DataC
         DAAL_CHECK_BLOCK_STATUS(partialSplitRows);
         const algorithmFPType * const partialSplit = partialSplitRows.get();
 
-        partialSplitValues[part] = partialSplit[0];
+        if ((size_t)partialSplit[1] == -1)
+        {
+            continue;
+        }
+
+        partialSplitValues[valuedPart] = partialSplit[0];
+        valuedPart++;
 
         DAAL_ASSERT(partialSplit[1] >= 0)
         if (part == 0)
@@ -256,7 +273,7 @@ Status DBSCANDistrStep4Kernel<algorithmFPType, method, cpu>::compute(const DataC
         }
     }
 
-    algorithmFPType splitValue = findKthStatistic<algorithmFPType, cpu>(partialSplitValues, nBlocks, nBlocks / 2);
+    algorithmFPType splitValue = findKthStatistic<algorithmFPType, cpu>(partialSplitValues, valuedPart, valuedPart / 2);
 
     DAAL_OVERFLOW_CHECK_BY_MULTIPLICATION(size_t, nBlocks, sizeof(int));
 
@@ -779,7 +796,10 @@ Status DBSCANDistrStep6Kernel<algorithmFPType, method, cpu>::computeNoMemSave(co
     NeighborhoodEngine<method, algorithmFPType, cpu> nHaloEngine(ntData.get(), ntHaloData.get(), ntHaloWeights.get(), epsilon, minkowskiPower);
     DAAL_CHECK_STATUS_VAR(nHaloEngine.queryFull(haloNeighs.get()));
 
-    DAAL_CHECK_STATUS_VAR(ntClusterStructure->resize(nRows));
+    if (nRows)
+    {
+        DAAL_CHECK_STATUS_VAR(ntClusterStructure->resize(nRows))
+    }
 
     WriteRows<int, cpu> clusterStructureRows(ntClusterStructure, 0, nRows);
     if (nRows)
@@ -952,7 +972,10 @@ Status DBSCANDistrStep6Kernel<algorithmFPType, method, cpu>::computeMemSave(cons
     NeighborhoodEngine<method, algorithmFPType, cpu> nEngine(ntData.get(), ntData.get(), ntWeights.get(), epsilon, minkowskiPower);
     NeighborhoodEngine<method, algorithmFPType, cpu> nHaloEngine(ntData.get(), ntHaloData.get(), ntHaloWeights.get(), epsilon, minkowskiPower);
 
-    DAAL_CHECK_STATUS_VAR(ntClusterStructure->resize(nRows));
+    if (nRows)
+    {
+        DAAL_CHECK_STATUS_VAR(ntClusterStructure->resize(nRows))
+    }
 
     WriteRows<int, cpu> clusterStructureRows(ntClusterStructure, 0, nRows);
     if (nRows)

@@ -184,6 +184,11 @@ void geometricPartitioning()
         sendCollectionAllToAll(beginId, endId, rankId, step4ResultPartitionedDataTag, curPartitionedData, partitionedData);
         sendCollectionAllToAll(beginId, endId, rankId, step4ResultPartitionedPartialOrdersTag, curPartitionedPartialOrders, partitionedPartialOrders);
 
+        if (partitionedData->size() == 0)
+            partitionedData->push_back(NumericTable::cast((*curPartitionedData)[0]));
+        if (partitionedPartialOrders->size() == 0)
+            partitionedPartialOrders->push_back(NumericTable::cast((*curPartitionedPartialOrders)[0]));
+
         if (rankId < beginId + leftPartitions)
         {
             endId = beginId + leftPartitions;

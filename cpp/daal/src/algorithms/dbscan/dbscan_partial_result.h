@@ -179,7 +179,14 @@ DAAL_EXPORT services::Status DistributedPartialResultStep6::allocate(const daal:
 
     services::Status status;
 
-    set(step6ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    if (nRows != 0)
+    {
+        set(step6ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    }
+    else
+    {
+        set(step6ClusterStructure, HomogenNumericTable<int>::create(4, 0, NumericTable::notAllocate, &status));
+    }
     set(step6FinishedFlag, HomogenNumericTable<int>::create(1, 1, NumericTable::doAllocate, &status));
     set(step6NClusters, HomogenNumericTable<int>::create(1, 1, NumericTable::doAllocate, &status));
 
@@ -229,7 +236,14 @@ DAAL_EXPORT services::Status DistributedPartialResultStep8::allocate(const daal:
 
     services::Status status;
 
-    set(step8ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    if (nRows != 0)
+    {
+        set(step8ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    }
+    else
+    {
+        set(step8ClusterStructure, HomogenNumericTable<int>::create(4, 0, NumericTable::notAllocate, &status));
+    }
     set(step8FinishedFlag, HomogenNumericTable<int>::create(1, 1, NumericTable::doAllocate, &status));
     set(step8NClusters, HomogenNumericTable<int>::create(1, 1, NumericTable::doAllocate, &status));
 
@@ -307,7 +321,14 @@ DAAL_EXPORT services::Status DistributedPartialResultStep10::allocate(const daal
 
     services::Status status;
 
-    set(step10ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    if (nRows != 0)
+    {
+        set(step10ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    }
+    else
+    {
+        set(step10ClusterStructure, HomogenNumericTable<int>::create(4, 0, NumericTable::notAllocate, &status));
+    }
     set(step10FinishedFlag, HomogenNumericTable<int>::create(1, 1, NumericTable::doAllocate, &status));
 
     DataCollectionPtr dcQueries(new DataCollection(nBlocks));
@@ -341,7 +362,14 @@ DAAL_EXPORT services::Status DistributedPartialResultStep11::allocate(const daal
 
     services::Status status;
 
-    set(step11ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    if (nRows != 0)
+    {
+        set(step11ClusterStructure, HomogenNumericTable<int>::create(4, nRows, NumericTable::doAllocate, &status));
+    }
+    else
+    {
+        set(step11ClusterStructure, HomogenNumericTable<int>::create(4, 0, NumericTable::notAllocate, &status));
+    }
     set(step11FinishedFlag, HomogenNumericTable<int>::create(1, 1, NumericTable::doAllocate, &status));
 
     DataCollectionPtr dcQueries(new DataCollection(nBlocks));

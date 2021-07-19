@@ -152,26 +152,35 @@ Status DistributedPartialResultStep4::check(const daal::algorithms::Input * inpu
     DataCollectionPtr dcPartitionedPartialOrders = get(partitionedPartialOrders);
 
     DAAL_CHECK_EX(dcPartitionedData.get(), ErrorNullPartialResult, ArgumentName, partitionedDataStr());
-    DAAL_CHECK_EX(dcPartitionedData->size() == nBlocks, ErrorIncorrectDataCollectionSize, ArgumentName, partitionedDataStr());
+    if (NumericTable::cast((*dcPartitionedData)[0])->getNumberOfRows() != 0)
+    {
+        DAAL_CHECK_EX(dcPartitionedData->size() == nBlocks, ErrorIncorrectDataCollectionSize, ArgumentName, partitionedDataStr());
+    }
 
     DAAL_CHECK_EX(dcPartitionedPartialOrders.get(), ErrorNullPartialResult, ArgumentName, partitionedPartialOrdersStr());
-    DAAL_CHECK_EX(dcPartitionedPartialOrders->size() == nBlocks, ErrorIncorrectDataCollectionSize, ArgumentName, partitionedPartialOrdersStr());
+    if (NumericTable::cast((*dcPartitionedPartialOrders)[0])->getNumberOfRows() != 0)
+    {
+        DAAL_CHECK_EX(dcPartitionedPartialOrders->size() == nBlocks, ErrorIncorrectDataCollectionSize, ArgumentName, partitionedPartialOrdersStr());
+    }
 
     const int unexpectedLayouts = (int)packed_mask;
 
-    for (size_t i = 0; i < nBlocks; i++)
+    if (NumericTable::cast((*dcPartitionedData)[0])->getNumberOfRows() != 0)
     {
-        DAAL_CHECK_EX((*dcPartitionedData)[i], ErrorNullNumericTable, ArgumentName, partitionedDataStr());
-        NumericTablePtr ntPartitionedData = NumericTable::cast((*dcPartitionedData)[i]);
-        DAAL_CHECK_EX(ntPartitionedData, ErrorIncorrectElementInNumericTableCollection, ArgumentName, partitionedDataStr());
-        DAAL_CHECK_STATUS_VAR(checkNumericTable(ntPartitionedData.get(), partitionedDataStr(), unexpectedLayouts, 0, nFeatures, 0, false));
+        for (size_t i = 0; i < nBlocks; i++)
+        {
+            DAAL_CHECK_EX((*dcPartitionedData)[i], ErrorNullNumericTable, ArgumentName, partitionedDataStr());
+            NumericTablePtr ntPartitionedData = NumericTable::cast((*dcPartitionedData)[i]);
+            DAAL_CHECK_EX(ntPartitionedData, ErrorIncorrectElementInNumericTableCollection, ArgumentName, partitionedDataStr());
+            DAAL_CHECK_STATUS_VAR(checkNumericTable(ntPartitionedData.get(), partitionedDataStr(), unexpectedLayouts, 0, nFeatures, 0, false));
 
-        DAAL_CHECK_EX((*dcPartitionedPartialOrders)[i], ErrorNullNumericTable, ArgumentName, partitionedPartialOrdersStr());
-        NumericTablePtr ntPartitionedPartialOrders = NumericTable::cast((*dcPartitionedPartialOrders)[i]);
-        DAAL_CHECK_EX(ntPartitionedPartialOrders, ErrorIncorrectElementInNumericTableCollection, ArgumentName, partitionedPartialOrdersStr());
-        DAAL_CHECK_STATUS_VAR(checkNumericTable(ntPartitionedPartialOrders.get(), partitionedPartialOrdersStr(), unexpectedLayouts, 0, 2, 0, false));
+            DAAL_CHECK_EX((*dcPartitionedPartialOrders)[i], ErrorNullNumericTable, ArgumentName, partitionedPartialOrdersStr());
+            NumericTablePtr ntPartitionedPartialOrders = NumericTable::cast((*dcPartitionedPartialOrders)[i]);
+            DAAL_CHECK_EX(ntPartitionedPartialOrders, ErrorIncorrectElementInNumericTableCollection, ArgumentName, partitionedPartialOrdersStr());
+            DAAL_CHECK_STATUS_VAR(
+                checkNumericTable(ntPartitionedPartialOrders.get(), partitionedPartialOrdersStr(), unexpectedLayouts, 0, 2, 0, false));
+        }
     }
-
     return Status();
 }
 
@@ -260,6 +269,7 @@ Status DistributedPartialResultStep6::check(const daal::algorithms::Input * inpu
         nRows += NumericTable::cast((*dcPartialData)[i])->getNumberOfRows();
     }
 
+    if (nRows != 0)
     {
         NumericTablePtr ntClusterStructure = get(step6ClusterStructure);
         DAAL_CHECK_EX(ntClusterStructure, ErrorNullNumericTable, ArgumentName, step6ClusterStructureStr());
@@ -356,6 +366,7 @@ Status DistributedPartialResultStep8::check(const daal::algorithms::Input * inpu
     const DistributedInput<step8Local> * algInput = static_cast<const DistributedInput<step8Local> *>(input);
     const size_t nRows                            = algInput->get(step8InputClusterStructure)->getNumberOfRows();
 
+    if (nRows != 0)
     {
         NumericTablePtr ntClusterStructure = get(step8ClusterStructure);
         DAAL_CHECK_EX(ntClusterStructure, ErrorNullNumericTable, ArgumentName, step8ClusterStructureStr());
@@ -488,6 +499,7 @@ Status DistributedPartialResultStep10::check(const daal::algorithms::Input * inp
     const DistributedInput<step10Local> * algInput = static_cast<const DistributedInput<step10Local> *>(input);
     const size_t nRows                             = algInput->get(step10InputClusterStructure)->getNumberOfRows();
 
+    if (nRows != 0)
     {
         NumericTablePtr ntClusterStructure = get(step10ClusterStructure);
         DAAL_CHECK_EX(ntClusterStructure, ErrorNullNumericTable, ArgumentName, step10ClusterStructureStr());
@@ -554,6 +566,7 @@ Status DistributedPartialResultStep11::check(const daal::algorithms::Input * inp
     const DistributedInput<step11Local> * algInput = static_cast<const DistributedInput<step11Local> *>(input);
     const size_t nRows                             = algInput->get(step11InputClusterStructure)->getNumberOfRows();
 
+    if (nRows != 0)
     {
         NumericTablePtr ntClusterStructure = get(step11ClusterStructure);
         DAAL_CHECK_EX(ntClusterStructure, ErrorNullNumericTable, ArgumentName, step11ClusterStructureStr());
