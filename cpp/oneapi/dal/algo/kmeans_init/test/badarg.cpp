@@ -79,7 +79,7 @@ KMEANS_INIT_BADARG_TEST("throws if  cluster count leads to overflow") {
     const auto data_table = homogen_table::wrap(data, row_count, column_count);
 
     const auto desc = this->get_descriptor().set_cluster_count(0x7FFFFFFFFFFFFFFF);
-    REQUIRE_THROWS_AS(compute(desc, data_table), range_error);
+    REQUIRE_THROWS_AS(this->compute(desc, data_table), range_error);
 }
 
 } // namespace oneapi::dal::kmeans_init::test

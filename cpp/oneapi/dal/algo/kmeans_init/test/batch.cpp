@@ -57,7 +57,7 @@ public:
         const auto desc = get_descriptor(cluster_count);
 
         INFO("compute");
-        const auto compute_results = compute(desc, data);
+        const auto compute_results = this->compute(desc, data);
         check_results(cluster_count, data, compute_results.get_centroids());
     }
 
