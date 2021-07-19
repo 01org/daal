@@ -14,21 +14,36 @@
 .. * limitations under the License.
 .. *******************************************************************************/
 
-.. api_algorithms:
+.. highlight:: cpp
+.. default-domain:: cpp
 
-Algorithms
-==========
+.. /use the algorithm name/
+.. _alg_graph_algorithm:
 
-Refer to :ref:`Developer Guide <dg_algorithms>` for mathematical descriptions of the algorithms.
+.. /use the algorithm name/
+===================================
+Graph Algorithm
+===================================
 
-.. toctree::
-   :maxdepth: 2
+.. /use the algorithm name/
+.. include:: ../../../includes/graphs/graph-algorithm-introduction.rst
 
-   clustering/index.rst
-   decomposition/index.rst
-   ensembles/index.rst   
-   graphs/index.rst
-   kernel-functions/index.rst
-   nearest-neighbors/index.rst
-   pairwise-distances/index.rst
-   svm/index.rst
+------------------------
+Mathematical formulation
+------------------------
+
+.. /write the mathematical description of the algorithm/
+
+---------------------
+Programming Interface
+---------------------
+
+.. /use the algorithm name/
+Refer to :ref:`API Reference: Graph Algorithm <api_graph_algorithm>`.
+
+--------
+Examples
+--------
+
+.. /use the algorithm name/
+.. include:: ../../../includes/graphs/graph-algorithm-examples.rst

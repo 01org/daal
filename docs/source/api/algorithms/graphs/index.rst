@@ -1,5 +1,5 @@
 .. ******************************************************************************
-.. * Copyright 2020-2021 Intel Corporation
+.. * Copyright 2021 Intel Corporation
 .. *
 .. * Licensed under the Apache License, Version 2.0 (the "License");
 .. * you may not use this file except in compliance with the License.
@@ -14,25 +14,13 @@
 .. * limitations under the License.
 .. *******************************************************************************/
 
-.. _dg_algorithms:
+======
+Graphs
+======
 
-Algorithms
-==========
-
-The Algorithms component consists of classes that implement algorithms
-for data analysis (data mining) and data modeling (training and prediction).
-These algorithms include matrix decompositions, clustering, classification,
-and regression algorithms, as well as association rules discovery.
-
+This chapter describes programming interfaces of the graph algorithms implemented in |short_name|:
 
 .. toctree::
-   :maxdepth: 2
+   :titlesonly:
 
-   clustering/index.rst
-   decomposition/index.rst
-   ensembles/index.rst   
-   graphs/index.rst
-   kernel-functions/index.rst
-   nearest-neighbors/index.rst
-   pairwise-distances/index.rst
-   svm/index.rst
+   graph-algorithm.rst
