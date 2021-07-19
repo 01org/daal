@@ -26,6 +26,7 @@ DAAL  = assoc_rules_apriori_batch             \
         adaboost_sammer_multi_class_batch     \
         basic_statistics                      \
         bf_knn_dense_batch                    \
+        bf_knn_dense_search_batch             \
         brownboost_dense_batch                \
         logitboost_dense_batch                \
         cd_dense_batch                        \
@@ -83,6 +84,7 @@ DAAL  = assoc_rules_apriori_batch             \
         impl_als_csr_distr                    \
         impl_als_dense_batch                  \
         kdtree_knn_dense_batch                \
+        kdtree_knn_dense_search_batch         \
         kernel_func_lin_dense_batch           \
         kernel_func_lin_csr_batch             \
         kernel_func_rbf_dense_batch           \

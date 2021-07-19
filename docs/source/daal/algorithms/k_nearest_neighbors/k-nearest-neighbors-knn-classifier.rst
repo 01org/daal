@@ -309,6 +309,8 @@ Examples
 
     - :cpp_example:`kdtree_knn_dense_batch.cpp <k_nearest_neighbors/kdtree_knn_dense_batch.cpp>`
     - :cpp_example:`bf_knn_dense_batch.cpp <k_nearest_neighbors/bf_knn_dense_batch.cpp>`
+    - :cpp_example:`kdtree_knn_dense_search_batch.cpp <k_nearest_neighbors/kdtree_knn_dense_search_batch.cpp>`
+    - :cpp_example:`bf_knn_dense_search_batch.cpp <k_nearest_neighbors/bf_knn_dense_search_batch.cpp>`
 
   .. tab:: Java*
   

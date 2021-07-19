@@ -43,7 +43,7 @@ const string testDatasetFileName  = "../data/batch/knn_regression_test.csv";
 
 const size_t nFeatures  = 3; /* Number of features in training and testing data sets */
 const size_t nResponses = 4; /* Number of dependent variables that correspond to each observation */
-const size_t kNeighbors = 4; /* The best number of neighbors defined by hyperparameter search */
+const size_t nNeighbors = 4; /* The best number of neighbors defined by hyperparameter search */
 
 void loadData(const string & fileName, NumericTablePtr & dataSamples, NumericTablePtr & dataResponses);
 void trainModel(NumericTablePtr & trainSamples, bf_knn_classification::training::ResultPtr & trainingResult);
@@ -106,7 +106,7 @@ void trainModel(NumericTablePtr & trainSamples, bf_knn_classification::training:
     bf_knn_classification::training::Batch<> algorithm;
     /* Pass the training data set and dependent values to the algorithm */
     algorithm.input.set(classifier::training::data, trainSamples);
-    algorithm.parameter().k                 = kNeighbors;
+    algorithm.parameter().k                 = nNeighbors;
     algorithm.parameter().resultsToEvaluate = classifier::none;
     algorithm.parameter().resultsToCompute  = bf_knn_classification::computeIndicesOfNeighbors;
     /* Train the BF kNN model */
@@ -125,7 +125,7 @@ void testModel(bf_knn_classification::training::ResultPtr & trainingResult, Nume
     algorithm.input.set(classifier::prediction::data, testSamples);
     algorithm.input.set(classifier::prediction::model, trainingResult->get(classifier::training::model));
     algorithm.parameter().resultsToEvaluate = classifier::none;
-    algorithm.parameter().k                 = kNeighbors;
+    algorithm.parameter().k                 = nNeighbors;
     algorithm.parameter().resultsToCompute  = bf_knn_classification::computeIndicesOfNeighbors;
 
     /* Compute prediction results */
@@ -153,7 +153,7 @@ void doRegression(cl::sycl::queue & q, bf_knn_classification::prediction::Result
         auto neighborsIndicesSharedPtr = neighborsIndicesBlock.getBuffer().toUSM(q, data_management::readOnly);
         auto testResponsesSharedPtr = testResponsesBlock.getBuffer().toUSM(q, data_management::writeOnly);
         auto trainResponsesSharedPtr = trainResponsesBlock.getBuffer().toUSM(q, data_management::readOnly);
-        const float kn              = static_cast<float>(kNeighbors);
+        const float kn              = static_cast<float>(nNeighbors);
         q.submit([&](cl::sycl::handler & h) {
             auto neighborsIndicesPtr = neighborsIndicesSharedPtr.get();
             auto testResponsesPtr    = testResponsesSharedPtr.get();
@@ -161,9 +161,9 @@ void doRegression(cl::sycl::queue & q, bf_knn_classification::prediction::Result
             h.parallel_for<class regressor>(cl::sycl::range<2>(nTestSamples, nResponses), [=](cl::sycl::id<2> idx) {
                 float acc(0);
                 int trIndex;
-                for (size_t i = 0; i < kNeighbors; ++i)
+                for (size_t i = 0; i < nNeighbors; ++i)
                 {
-                    trIndex = neighborsIndicesPtr[idx[0] * kNeighbors + i];
+                    trIndex = neighborsIndicesPtr[idx[0] * nNeighbors + i];
                     acc += trainResponsesPtr[trIndex * nResponses + idx[1]];
                 }
                 testResponsesPtr[idx[0] * nResponses + idx[1]] = acc / kn;
