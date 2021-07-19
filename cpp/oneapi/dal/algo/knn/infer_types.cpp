@@ -16,6 +16,7 @@
 
 #include "oneapi/dal/algo/knn/infer_types.hpp"
 #include "oneapi/dal/detail/common.hpp"
+#include "oneapi/dal/exceptions.hpp"
 
 namespace oneapi::dal::knn {
 
@@ -31,6 +32,7 @@ public:
 template <typename Task>
 class detail::v1::infer_result_impl : public base {
 public:
+    result_option_id options;
     table responses;
     table indices;
     table distances;
@@ -70,6 +72,10 @@ infer_result<Task>::infer_result() : impl_(new infer_result_impl<Task>{}) {}
 
 template <typename Task>
 const table& infer_result<Task>::get_responses() const {
+    using msg = dal::detail::error_messages;
+    if (!bool(get_result_options() & result_options::responses)) {
+        throw domain_error(msg::result_option_have_not_been_computed());
+    }
     return impl_->responses;
 }
 
@@ -80,6 +86,10 @@ void infer_result<Task>::set_responses_impl(const table& value) {
 
 template <typename Task>
 const table& infer_result<Task>::get_indices() const {
+    using msg = dal::detail::error_messages;
+    if (!bool(get_result_options() & result_options::indices)) {
+        throw domain_error(msg::result_option_have_not_been_computed());
+    }
     return impl_->indices;
 }
 
@@ -90,12 +100,26 @@ void infer_result<Task>::set_indices_impl(const table& value) {
 
 template <typename Task>
 const table& infer_result<Task>::get_distances() const {
+    using msg = dal::detail::error_messages;
+    if (!bool(get_result_options() & result_options::distances)) {
+        throw domain_error(msg::result_option_have_not_been_computed());
+    }
     return impl_->distances;
 }
 
 template <typename Task>
 void infer_result<Task>::set_distances_impl(const table& value) {
     impl_->distances = value;
+}
+
+template <typename Task>
+const result_option_id& infer_result<Task>::get_result_options() const {
+    return impl_->options;
+}
+
+template <typename Task>
+void infer_result<Task>::set_result_options_impl(const result_option_id& value) {
+    impl_->options = value;
 }
 
 template class ONEDAL_EXPORT infer_input<task::classification>;

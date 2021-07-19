@@ -253,6 +253,9 @@ inline table convert_from_daal_table(const daal::data_management::NumericTablePt
 #ifdef ONEDAL_DATA_PARALLEL
 inline daal::data_management::NumericTablePtr convert_to_daal_table(const sycl::queue& queue,
                                                                     const table& table) {
+    if (!table.has_data()) {
+        return daal::data_management::NumericTablePtr{};
+    }
     return interop::sycl_table_adapter::create(queue, table);
 }
 

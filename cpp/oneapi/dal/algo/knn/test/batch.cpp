@@ -45,7 +45,9 @@ public:
     auto get_descriptor(std::int64_t override_class_count,
                         std::int64_t override_neighbor_count) const {
         return knn::descriptor<Float, Method, knn::task::classification>(override_class_count,
-                                                                         override_neighbor_count);
+                                                                         override_neighbor_count)
+            .set_result_options(knn::result_options::responses | knn::result_options::indices |
+                                knn::result_options::distances);
     }
 
     template <typename Distance,
@@ -56,9 +58,11 @@ public:
                         const Distance& distance) const {
         return knn::
             descriptor<Float, knn::method::brute_force, knn::task::classification, Distance>(
-                override_class_count,
-                override_neighbor_count,
-                distance);
+                   override_class_count,
+                   override_neighbor_count,
+                   distance)
+                .set_result_options(knn::result_options::responses | knn::result_options::indices |
+                                    knn::result_options::distances);
     }
 
     static constexpr bool is_kd_tree = std::is_same_v<Method, knn::method::kd_tree>;

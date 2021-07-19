@@ -96,6 +96,62 @@ using v1::base;
 using v1::data_type;
 using v1::range;
 
+class result_option_id_base {
+    using this_t = result_option_id_base;
+
+public:
+    using bitset_t = std::uint64_t;
+    result_option_id_base() = default;
+    explicit result_option_id_base(const bitset_t& mask) : mask_{ mask } {}
+
+    operator bool() const {
+        return mask_ > 0;
+    }
+
+    const bitset_t& get_mask() const {
+        return mask_;
+    }
+
+    static this_t make_by_index(std::int64_t result_index) {
+        return this_t{}.set_mask(std::uint64_t(1) << result_index);
+    }
+
+private:
+    this_t& set_mask(const bitset_t& mask) {
+        this->mask_ = mask;
+        return *this;
+    }
+
+    bitset_t mask_ = 0;
+};
+
+template <typename ResultOptionIdType>
+constexpr inline bool is_result_option_id_v =
+    std::is_base_of_v<result_option_id_base, ResultOptionIdType>;
+
+template <typename ResultOptionIdType>
+using enable_if_result_option_id_t = std::enable_if_t<is_result_option_id_v<ResultOptionIdType>>;
+
+template <typename ResultOptionIdType, typename = enable_if_result_option_id_t<ResultOptionIdType>>
+inline ResultOptionIdType operator|(const ResultOptionIdType& lhs, const ResultOptionIdType& rhs) {
+    return result_option_id_base{ lhs.get_mask() | rhs.get_mask() };
+}
+
+template <typename ResultOptionIdType, typename = enable_if_result_option_id_t<ResultOptionIdType>>
+inline ResultOptionIdType operator&(const ResultOptionIdType& lhs, const ResultOptionIdType& rhs) {
+    return result_option_id_base{ lhs.get_mask() & rhs.get_mask() };
+}
+
+template <typename ResultOptionIdType, typename = enable_if_result_option_id_t<ResultOptionIdType>>
+inline bool operator==(const ResultOptionIdType& lhs, const ResultOptionIdType& rhs) {
+    return lhs.get_mask() == rhs.get_mask();
+}
+
+template <typename ResultOptionIdType, typename = enable_if_result_option_id_t<ResultOptionIdType>>
+inline bool operator!=(const ResultOptionIdType& lhs, const ResultOptionIdType& rhs) {
+    return lhs.get_mask() != rhs.get_mask();
+}
+
 } // namespace oneapi::dal
 
 namespace oneapi::dal::preview {

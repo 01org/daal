@@ -16,10 +16,11 @@
 
 #pragma once
 
-#include "oneapi/dal/detail/common.hpp"
-#include "oneapi/dal/table/common.hpp"
 #include "oneapi/dal/algo/knn/detail/distance.hpp"
 #include "oneapi/dal/detail/serialization.hpp"
+#include "oneapi/dal/detail/common.hpp"
+#include "oneapi/dal/table/common.hpp"
+#include "oneapi/dal/common.hpp"
 
 namespace oneapi::dal::knn {
 
@@ -40,6 +41,9 @@ namespace v1 {
 /// Tag-type that parameterizes entities used for solving
 /// :capterm:`classification problem <classification>`.
 struct classification {};
+
+/// Tag-type that parameterizes entities used for solving
+/// the :capterm:`search problem <search>`.
 struct search {};
 
 /// Alias tag-type for classification task.
@@ -71,6 +75,32 @@ using v1::brute_force;
 using v1::by_default;
 
 } // namespace method
+
+/// Represents result option flag
+/// Behaves like a regular :expr`enum`.
+class result_option_id : public result_option_id_base {
+public:
+    result_option_id() : result_option_id_base{} {}
+    result_option_id(const result_option_id_base& base) : result_option_id_base{ base } {}
+};
+
+namespace detail {
+
+ONEDAL_EXPORT result_option_id get_indices_id();
+ONEDAL_EXPORT result_option_id get_distances_id();
+ONEDAL_EXPORT result_option_id get_responses_id();
+
+} // namespace detail
+
+/// Result options are used to define
+/// what should algorithm return
+namespace result_options {
+
+const result_option_id indices = detail::get_indices_id();
+const result_option_id distances = detail::get_distances_id();
+const result_option_id responses = detail::get_responses_id();
+
+} // namespace result_options
 
 namespace detail {
 namespace v1 {
@@ -126,6 +156,7 @@ public:
     std::int64_t get_class_count() const;
     std::int64_t get_neighbor_count() const;
     voting_mode get_voting_mode() const;
+    result_option_id get_result_options() const;
 
 protected:
     explicit descriptor_base(const detail::distance_ptr& distance);
@@ -135,6 +166,7 @@ protected:
     void set_voting_mode_impl(voting_mode value);
     void set_distance_impl(const detail::distance_ptr& distance);
     const detail::distance_ptr& get_distance_impl() const;
+    void set_result_options_impl(const result_option_id& value);
 
 private:
     dal::detail::pimpl<descriptor_impl<Task>> impl_;
@@ -210,6 +242,14 @@ public:
     }
 
     /// Creates a new instance of the class with the given :literal:`neighbor_count`
+    /// property value.
+    /// Used with :expr:`task::search` only.
+    template <typename T = Task, typename = detail::enable_if_search_t<T>>
+    explicit descriptor(std::int64_t neighbor_count) : base_t() {
+        set_neighbor_count(neighbor_count);
+    }
+
+    /// Creates a new instance of the class with the given :literal:`neighbor_count`
     /// and :literal:`distance` property values.
     /// Used with :expr:`task::search` only.
     template <typename T = Task, typename = detail::enable_if_search_t<T>>
@@ -261,6 +301,16 @@ public:
     template <typename M = Method, typename = detail::enable_if_brute_force_t<M>>
     auto& set_distance(const distance_t& dist) {
         base_t::set_distance_impl(std::make_shared<detail::distance<distance_t>>(dist));
+        return *this;
+    }
+
+    /// Choose which results should be computed and returned.
+    result_option_id get_result_options() const {
+        return base_t::get_result_options();
+    }
+
+    auto& set_result_options(const result_option_id& value) {
+        base_t::set_result_options_impl(value);
         return *this;
     }
 };

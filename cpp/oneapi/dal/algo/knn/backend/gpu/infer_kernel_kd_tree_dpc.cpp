@@ -14,10 +14,13 @@
 * limitations under the License.
 *******************************************************************************/
 
+#include "oneapi/dal/algo/knn/backend/model_conversion.hpp"
 #include "oneapi/dal/algo/knn/backend/gpu/infer_kernel.hpp"
+
 #include "oneapi/dal/backend/interop/common.hpp"
 #include "oneapi/dal/backend/interop/common_dpc.hpp"
 #include "oneapi/dal/backend/interop/error_converter.hpp"
+
 #include "oneapi/dal/detail/common.hpp"
 
 #include "oneapi/dal/table/row_accessor.hpp"

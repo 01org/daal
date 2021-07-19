@@ -37,7 +37,7 @@ using v1::infer_result_impl;
 namespace v1 {
 
 /// @tparam Task Tag-type that specifies type of the problem to solve. Can
-///              be :expr:`task::classification`.
+///              be :expr:`task::classification` or :expr:`task::search`.
 template <typename Task = task::by_default>
 class infer_input : public base {
     static_assert(detail::is_valid_task_v<Task>);
@@ -76,7 +76,7 @@ private:
 };
 
 /// @tparam Task Tag-type that specifies type of the problem to solve. Can
-///              be :expr:`task::classification`.
+///              be :expr:`task::classification` or :expr:`task::search`.
 template <typename Task = task::by_default>
 class infer_result {
     static_assert(detail::is_valid_task_v<Task>);
@@ -108,6 +108,8 @@ public:
         return *this;
     }
 
+    /// Indices of nearest neighbors
+    /// @remark default = table{}
     const table& get_indices() const;
 
     auto& set_indices(const table& value) {
@@ -115,6 +117,8 @@ public:
         return *this;
     }
 
+    /// Distances to nearest neighbors
+    /// @remark default = table{}
     const table& get_distances() const;
 
     auto& set_distances(const table& value) {
@@ -122,10 +126,20 @@ public:
         return *this;
     }
 
+    /// Result options that indicates availability of the properties
+    /// @remark default = default_result_options<Task>
+    const result_option_id& get_result_options() const;
+
+    auto& set_result_options(const result_option_id& value) {
+        set_result_options_impl(value);
+        return *this;
+    }
+
 protected:
     void set_responses_impl(const table&);
     void set_indices_impl(const table&);
     void set_distances_impl(const table&);
+    void set_result_options_impl(const result_option_id&);
     const table& get_responses_impl() const;
 
 private:

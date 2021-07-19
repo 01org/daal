@@ -19,9 +19,32 @@
 #include "oneapi/dal/exceptions.hpp"
 
 namespace oneapi::dal::knn {
-namespace detail {
-namespace v1 {
 
+namespace detail {
+
+result_option_id get_responses_id() {
+    return result_option_id::make_by_index(0);
+}
+
+result_option_id get_indices_id() {
+    return result_option_id::make_by_index(1);
+}
+
+result_option_id get_distances_id() {
+    return result_option_id::make_by_index(2);
+}
+
+template <typename Task>
+const result_option_id default_result_options = result_option_id{};
+
+template <>
+const result_option_id default_result_options<task::classification> = result_options::responses;
+
+template <>
+const result_option_id default_result_options<task::search> =
+    result_options::indices | result_options::distances;
+
+namespace v1 {
 template <typename Task>
 class descriptor_impl : public base {
 public:
@@ -31,6 +54,7 @@ public:
     std::int64_t neighbor_count = 1;
     voting_mode voting_mode_value = voting_mode::uniform;
     detail::distance_ptr distance;
+    result_option_id result_options = default_result_options<Task>;
 };
 
 template <typename Task>
@@ -87,6 +111,23 @@ const detail::distance_ptr& descriptor_base<Task>::get_distance_impl() const {
 template <typename Task>
 void descriptor_base<Task>::set_distance_impl(const detail::distance_ptr& distance) {
     impl_->distance = distance;
+}
+
+template <typename Task>
+result_option_id descriptor_base<Task>::get_result_options() const {
+    return impl_->result_options;
+}
+
+template <typename Task>
+void descriptor_base<Task>::set_result_options_impl(const result_option_id& value) {
+    using msg = dal::detail::error_messages;
+    if (!bool(value)) {
+        throw domain_error(msg::empty_set_of_result_options());
+    }
+    else if (std::is_same_v<Task, task::search> && bool(value | result_options::responses)) {
+        throw domain_error(msg::invalid_set_of_result_options_to_search());
+    }
+    impl_->result_options = value;
 }
 
 template class ONEDAL_EXPORT descriptor_base<task::classification>;
