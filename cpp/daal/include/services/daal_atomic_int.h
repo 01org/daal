@@ -73,6 +73,21 @@ public:
     }
 
     /**
+     * Returns a result of comparing and exchanging  of atomic object
+     * \param[in] expected    The value to compare with
+     * \param[in] expected    The value to store after succesfull comparison
+     * \return Result of comparing and exchanging
+     */
+    DAAL_FORCEINLINE bool compare_exchange(dataType & expected, dataType desired)
+    {
+        DAAL_ASSERT(sizeof(my_storage) == sizeof(long))
+        auto res_val = _InterlockedCompareExchange((long volatile *)(&my_storage), desired, expected);
+        _ReadWriteBarrier();
+        bool result = res_val == desired ? true : false;
+        return result;
+    }
+
+    /**
      * Assigns the value to atomic object
      * \param[in] value    The value to be assigned
      */
@@ -135,6 +150,21 @@ public:
     {
         DAAL_ASSERT(sizeof(my_storage) == sizeof(size_t))
         return (size_t)(_InterlockedExchangeAdd64((__int64 *)(&my_storage), -1) - 1);
+    }
+
+    /**
+     * Returns a result of comparing and exchanging  of atomic object
+     * \param[in] expected    The value to compare with
+     * \param[in] expected    The value to store after succesfull comparison
+     * \return Result of comparing and exchanging
+     */
+    DAAL_FORCEINLINE bool compare_exchange(size_t & expected, size_t desired)
+    {
+        DAAL_ASSERT(sizeof(my_storage) == sizeof(size_t))
+        auto res_val = _InterlockedCompareExchange64((__int64 volatile *)(&my_storage), desired, expected);
+        _ReadWriteBarrier();
+        bool result = res_val == desired ? true : false;
+        return result;
     }
 
     /**
@@ -201,6 +231,17 @@ public:
      * \return An decrement of atomic object
      */
     DAAL_FORCEINLINE dataType dec() { return __atomic_sub_fetch(&my_storage, 1, __ATOMIC_SEQ_CST); }
+
+    /**
+     * Returns a result of comparing and exchanging  of atomic object
+     * \param[in] expected    The value to compare with
+     * \param[in] expected    The value to store after succesfull comparison
+     * \return Result of comparing and exchanging
+     */
+    DAAL_FORCEINLINE bool compare_exchange(dataType & expected, dataType desired)
+    {
+        return __atomic_compare_exchange(&my_storage, &expected, &desired, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    }
 
     /**
      * Assigns the value to atomic object
