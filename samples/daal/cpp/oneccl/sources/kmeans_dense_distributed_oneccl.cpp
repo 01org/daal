@@ -110,12 +110,20 @@ int main(int argc, char * argv[])
     auto comm = ccl::create_communicator(size, rank, kvs);
 
     /* Create GPU device from local rank and set execution context */
-    auto local_rank = getLocalRank(comm, size, rank);
     auto gpus       = get_gpus();
-    auto rank_gpu   = gpus[local_rank % gpus.size()];
-    cl::sycl::queue queue(rank_gpu);
-    daal::services::SyclExecutionContext ctx(queue);
-    services::Environment::getInstance()->setDefaultExecutionContext(ctx);
+
+    if (gpus.size() > 0) {
+        auto local_rank = getLocalRank(comm, size, rank);
+        auto rank_gpu   = gpus[local_rank % gpus.size()];
+        cl::sycl::queue queue(rank_gpu);
+        daal::services::SyclExecutionContext ctx(queue);
+        services::Environment::getInstance()->setDefaultExecutionContext(ctx);
+    } else {
+        cl::sycl::cpu_selector cpu;
+        cl::sycl::queue queue(cpu);
+        daal::services::SyclExecutionContext ctx(queue);
+        services::Environment::getInstance()->setDefaultExecutionContext(ctx);
+    }
 
     /* Start data processing */
     NumericTablePtr pData     = loadData(rank);
