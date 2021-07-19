@@ -554,4 +554,13 @@ private:
     shared_t data_;
 };
 
+#ifdef ONEDAL_DATA_PARALLEL
+template <typename Float, template <typename> typename Accessor, typename Table>
+inline ndarray<Float, 2> flatten_table(sycl::queue& q, const Table& table, sycl::usm::alloc alloc) {
+    Accessor<const Float> accessor{ table };
+    const auto data = accessor.pull(q, { 0, -1 }, alloc);
+    return ndarray<Float, 2>::wrap(data, { table.get_row_count(), table.get_column_count() });
+}
+#endif
+
 } // namespace oneapi::dal::backend::primitives
