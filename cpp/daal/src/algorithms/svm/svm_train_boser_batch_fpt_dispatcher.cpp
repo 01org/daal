@@ -28,5 +28,6 @@ namespace daal
 namespace algorithms
 {
 __DAAL_INSTANTIATE_DISPATCH_CONTAINER(svm::training::BatchContainer, batch, DAAL_FPTYPE, svm::training::boser)
+__DAAL_INSTANTIATE_DISPATCH_CONTAINER(svm::training::internal::BatchContainer, batch, DAAL_FPTYPE, svm::training::boser)
 } // namespace algorithms
 } // namespace daal

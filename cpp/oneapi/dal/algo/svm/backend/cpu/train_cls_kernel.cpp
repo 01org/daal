@@ -16,6 +16,7 @@
 
 #include <daal/src/algorithms/svm/svm_train_boser_kernel.h>
 #include <daal/src/algorithms/svm/svm_train_thunder_kernel.h>
+#include <daal/src/algorithms/svm/svm_train.h>
 #include <daal/src/algorithms/multiclassclassifier/multiclassclassifier_train_kernel.h>
 #include <daal/src/algorithms/multiclassclassifier/multiclassclassifier_svm_model.h>
 
@@ -114,7 +115,7 @@ static train_result<Task> call_multiclass_daal_kernel(const context_cpu& ctx,
     const auto daal_layout = daal_data->getDataLayout();
     auto daal_svm_model =
         daal_multiclass_internal::SvmModel::create<Float>(class_count, column_count, daal_layout);
-    using svm_batch_t = typename daal_svm::training::Batch<Float, to_daal_method<Method>::value>;
+    using svm_batch_t = typename daal_svm::training::internal::Batch<Float, to_daal_method<Method>::value>;
     auto svm_batch = daal::services::SharedPtr<svm_batch_t>(new svm_batch_t());
     svm_batch->parameter = daal_svm_parameter;
     daal_multiclass_parameter.training =

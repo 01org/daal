@@ -22,6 +22,7 @@
 */
 
 #include "algorithms/svm/svm_train_types.h"
+#include "src/algorithms/svm/svm_model.h"
 #include "src/services/serialization_utils.h"
 #include "src/services/daal_strings.h"
 
@@ -77,6 +78,44 @@ services::Status Parameter::check() const
     return s;
 }
 } // namespace interface2
+
+namespace internal
+{
+services::Status Parameter::check() const
+{
+    services::Status s;
+    DAAL_CHECK_STATUS(s, classifier::Parameter::check());
+    if (nClasses != 2)
+    {
+        return services::Status(services::Error::create(services::ErrorIncorrectParameter, services::ParameterName, nClassesStr()));
+    }
+    if (C <= 0)
+    {
+        return services::Status(services::Error::create(services::ErrorIncorrectParameter, services::ParameterName, cBoundStr()));
+    }
+    if (accuracyThreshold <= 0 || accuracyThreshold >= 1)
+    {
+        return services::Status(services::Error::create(services::ErrorIncorrectParameter, services::ParameterName, accuracyThresholdStr()));
+    }
+    if (tau <= 0)
+    {
+        return services::Status(services::Error::create(services::ErrorIncorrectParameter, services::ParameterName, tauStr()));
+    }
+    if (maxIterations == 0)
+    {
+        return services::Status(services::Error::create(services::ErrorIncorrectParameter, services::ParameterName, maxIterationsStr()));
+    }
+    if (!kernel.get())
+    {
+        return services::Status(services::Error::create(services::ErrorNullAuxiliaryAlgorithm, services::ParameterName, kernelFunctionStr()));
+    }
+    if (shrinkingStep == 0)
+    {
+        return services::Status(services::Error::create(services::ErrorIncorrectParameter, services::ParameterName, shrinkingStepStr()));
+    }
+    return s;
+}
+} // namespace internal
 
 namespace training
 {
