@@ -257,8 +257,16 @@ MSG(decision_forest_train_dense_method_is_not_implemented_for_gpu,
 MSG(decision_forest_train_hist_method_is_not_implemented_for_cpu,
     "Decision forest train hist method is not implemented for CPU")
 MSG(input_model_is_not_initialized, "Input model is not initialized")
-MSG(invalid_number_of_trees, "Invalid number of trees in model")
+MSG(not_enough_memory_to_build_one_tree, "There isn't enough memory to build one tree")
+MSG(invalid_number_of_trees, "Invalid number of trees")
+MSG(invalid_number_of_min_observations_in_leaf_node,
+    "Invalid number of min observations in leaf node")
+MSG(invalid_number_of_feature_per_node, "Invalid number of features per node")
+MSG(invalid_number_of_max_bins, "Invalid max number of bins")
+MSG(invalid_value_for_min_bin_size, "Invalid value for min bin size")
 MSG(invalid_number_of_classes, "Invalid number of classes")
+MSG(invalid_value_for_observations_per_tree_fraction,
+    "Invalid value for observations per tree fraction")
 MSG(input_model_tree_has_invalid_size, "Input model tree size is invalid")
 
 } // namespace v1
