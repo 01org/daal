@@ -18,6 +18,7 @@
 /*
 !  Content:
 !    C++ sample of K-Means clustering in the distributed processing mode
+!
 !******************************************************************************/
 
 /**
@@ -26,9 +27,9 @@
  */
 
 #include "daal_sycl.h"
-#include "service_sycl.h"
-#include "oneapi/ccl.hpp"
 #include "mpi.h"
+#include "oneapi/ccl.hpp"
+#include "service_sycl.h"
 #include "stdio.h"
 #include <memory>
 
@@ -36,242 +37,235 @@ using namespace std;
 using namespace daal;
 using namespace daal::algorithms;
 
-//typedef std::vector<char> ByteBuffer;
+// typedef std::vector<char> ByteBuffer;
 typedef float algorithmFPType; /* Algorithm floating-point type */
 
 /* K-Means algorithm parameters */
-const size_t nClusters   = 20;
+const size_t nClusters = 20;
 const size_t nIterations = 5;
-const size_t nProcs      = 4;
+const size_t nProcs = 4;
 
 /* Input data set parameters */
-const string dataFileNames[4] = { "./data/kmeans_dense.csv", "./data/kmeans_dense.csv", "./data/kmeans_dense.csv", "./data/kmeans_dense.csv" };
+const string dataFileNames[4] = {
+    "./data/kmeans_dense.csv", "./data/kmeans_dense.csv",
+    "./data/kmeans_dense.csv", "./data/kmeans_dense.csv"};
 
 #define ccl_root 0
 
-int getLocalRank(ccl::communicator & comm, int size, int rank)
-{
-    /* Obtain local rank among nodes sharing the same host name */
-    char zero = static_cast<char>(0);
-    std::vector<char> name(MPI_MAX_PROCESSOR_NAME + 1, zero);
-    int resultlen = 0;
-    MPI_Get_processor_name(name.data(), &resultlen);
-    std::string str(name.begin(), name.end());
-    std::vector<char> allNames((MPI_MAX_PROCESSOR_NAME + 1) * size, zero);
-    std::vector<size_t> aReceiveCount(size, MPI_MAX_PROCESSOR_NAME + 1);
-    ccl::allgatherv((int8_t *)name.data(), name.size(), (int8_t *)allNames.data(), aReceiveCount, comm).wait();
-    int localRank = 0;
-    for (int i = 0; i < rank; i++)
-    {
-        auto nameBegin = allNames.begin() + i * (MPI_MAX_PROCESSOR_NAME + 1);
-        std::string nbrName(nameBegin, nameBegin + (MPI_MAX_PROCESSOR_NAME + 1));
-        if (nbrName == str) localRank++;
-    }
-    return localRank;
+NumericTablePtr loadData(int rankId) {
+  /* Initialize FileDataSource<CSVFeatureManager> to retrieve the input data
+   * from a .csv file */
+  FileDataSource<CSVFeatureManager> dataSource(
+      dataFileNames[rankId], DataSource::doAllocateNumericTable,
+      DataSource::doDictionaryFromContext);
+
+  /* Retrieve the data from the input file */
+  dataSource.loadDataBlock();
+  return dataSource.getNumericTable();
 }
 
-NumericTablePtr loadData(int rankId)
-{
-    /* Initialize FileDataSource<CSVFeatureManager> to retrieve the input data from a .csv file */
-    FileDataSource<CSVFeatureManager> dataSource(dataFileNames[rankId], DataSource::doAllocateNumericTable, DataSource::doDictionaryFromContext);
+NumericTablePtr init(int rankId, const NumericTablePtr &pData,
+                     ccl::communicator &comm);
+NumericTablePtr compute(int rankId, const NumericTablePtr &pData,
+                        const NumericTablePtr &initialCentroids,
+                        ccl::communicator &comm);
 
-    /* Retrieve the data from the input file */
-    dataSource.loadDataBlock();
-    return dataSource.getNumericTable();
+int main(int argc, char *argv[]) {
+  /* Initialize oneCCL */
+  ccl::init();
+
+  MPI_Init(NULL, NULL);
+  int size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  ccl::shared_ptr_class<ccl::kvs> kvs;
+  ccl::kvs::address_type main_addr;
+  if (rank == 0) {
+    kvs = ccl::create_main_kvs();
+    main_addr = kvs->get_address();
+    MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0,
+              MPI_COMM_WORLD);
+  } else {
+    MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0,
+              MPI_COMM_WORLD);
+    kvs = ccl::create_kvs(main_addr);
+  }
+
+  auto comm = ccl::create_communicator(size, rank, kvs);
+  /* Create GPU device from local rank and set execution context if possible */
+  set_gpu_by_rank_if_possible(comm, size, rank);
+
+  /* Start data processing */
+  NumericTablePtr pData = loadData(rank);
+  NumericTablePtr centroids = init(rank, pData, comm);
+
+  for (size_t it = 0; it < nIterations; it++)
+    centroids = compute(rank, pData, centroids, comm);
+
+  /* Print the clusterization results */
+  if (rank == ccl_root)
+    printNumericTable(centroids, "First 10 dimensions of centroids:", 20, 10);
+
+  MPI_Finalize();
+  return 0;
 }
 
-NumericTablePtr init(int rankId, const NumericTablePtr & pData, ccl::communicator & comm);
-NumericTablePtr compute(int rankId, const NumericTablePtr & pData, const NumericTablePtr & initialCentroids, ccl::communicator & comm);
+NumericTablePtr init(int rankId, const NumericTablePtr &pData,
+                     ccl::communicator &comm) {
+  const bool isRoot = (rankId == ccl_root);
 
-int main(int argc, char * argv[])
-{
-    /* Initialize oneCCL */
-    ccl::init();
+  const size_t nVectorsInBlock = pData->getNumberOfRows();
 
-    MPI_Init(NULL, NULL);
-    int size, rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  /* Create an algorithm to compute k-means on local nodes */
+  kmeans::init::Distributed<step1Local, algorithmFPType,
+                            kmeans::init::randomDense>
+      localInit(nClusters, nProcs * nVectorsInBlock, rankId * nVectorsInBlock);
 
-    ccl::shared_ptr_class<ccl::kvs> kvs;
-    ccl::kvs::address_type main_addr;
-    if (rank == 0)
-    {
-        kvs       = ccl::create_main_kvs();
-        main_addr = kvs->get_address();
-        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+  /* Set the input data set to the algorithm */
+  localInit.input.set(kmeans::init::data, pData);
+
+  /* Compute k-means */
+  localInit.compute();
+
+  /* Serialize partial results required by step 2 */
+  InputDataArchive dataArch;
+  localInit.getPartialResult()->serialize(dataArch);
+  const uint64_t perNodeArchLength = (size_t)dataArch.getSizeOfArchive();
+
+  std::vector<uint64_t> aPerNodeArchLength(comm.size());
+  std::vector<size_t> aReceiveCount(comm.size(), 1);
+  /* Transfer archive length to the step 2 on the root node */
+  ccl::allgatherv(&perNodeArchLength, 1, aPerNodeArchLength.data(),
+                  aReceiveCount, comm)
+      .wait();
+
+  ByteBuffer serializedData;
+  /* Calculate total archive length */
+  int totalArchLength = 0;
+  int displs[nProcs];
+  for (size_t i = 0; i < nProcs; ++i) {
+    totalArchLength += aPerNodeArchLength[i];
+  }
+  aReceiveCount[ccl_root] = totalArchLength;
+
+  serializedData.resize(totalArchLength);
+
+  ByteBuffer nodeResults(perNodeArchLength);
+  dataArch.copyArchiveToArray(&nodeResults[0], perNodeArchLength);
+
+  /* Transfer partial results to step 2 on the root node */
+  ccl::allgatherv((int8_t *)&nodeResults[0], perNodeArchLength,
+                  (int8_t *)&serializedData[0], aPerNodeArchLength, comm)
+      .wait();
+  if (isRoot) {
+    /* Create an algorithm to compute k-means on the master node */
+    kmeans::init::Distributed<step2Master, algorithmFPType,
+                              kmeans::init::randomDense>
+        masterInit(nClusters);
+    for (size_t i = 0, shift = 0; i < nProcs;
+         shift += aPerNodeArchLength[i], ++i) {
+      /* Deserialize partial results from step 1 */
+      OutputDataArchive dataArch(&serializedData[shift], aPerNodeArchLength[i]);
+
+      kmeans::init::PartialResultPtr dataForStep2FromStep1(
+          new kmeans::init::PartialResult());
+      dataForStep2FromStep1->deserialize(dataArch);
+
+      /* Set local partial results as input for the master-node algorithm */
+      masterInit.input.add(kmeans::init::partialResults, dataForStep2FromStep1);
     }
-    else
-    {
-        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = ccl::create_kvs(main_addr);
-    }
 
-    auto comm = ccl::create_communicator(size, rank, kvs);
-
-    /* Create GPU device from local rank and set execution context */
-    auto local_rank = getLocalRank(comm, size, rank);
-    auto gpus       = get_gpus();
-    auto rank_gpu   = gpus[local_rank % gpus.size()];
-    cl::sycl::queue queue(rank_gpu);
-    daal::services::SyclExecutionContext ctx(queue);
-    services::Environment::getInstance()->setDefaultExecutionContext(ctx);
-
-    /* Start data processing */
-    NumericTablePtr pData     = loadData(rank);
-    NumericTablePtr centroids = init(rank, pData, comm);
-
-    for (size_t it = 0; it < nIterations; it++) centroids = compute(rank, pData, centroids, comm);
-
-    /* Print the clusterization results */
-    if (rank == ccl_root) printNumericTable(centroids, "First 10 dimensions of centroids:", 20, 10);
-
-    MPI_Finalize();
-    return 0;
+    /* Merge and finalizeCompute k-means on the master node */
+    masterInit.compute();
+    masterInit.finalizeCompute();
+    return masterInit.getResult()->get(kmeans::init::centroids);
+  }
+  return NumericTablePtr();
 }
 
-NumericTablePtr init(int rankId, const NumericTablePtr & pData, ccl::communicator & comm)
-{
-    const bool isRoot = (rankId == ccl_root);
+NumericTablePtr compute(int rankId, const NumericTablePtr &pData,
+                        const NumericTablePtr &initialCentroids,
+                        ccl::communicator &comm) {
+  const bool isRoot = (rankId == ccl_root);
+  uint64_t CentroidsArchLength = 0;
+  InputDataArchive inputArch;
+  if (isRoot) {
+    /*Retrieve the algorithm results and serialize them */
+    initialCentroids->serialize(inputArch);
+    CentroidsArchLength = inputArch.getSizeOfArchive();
+  }
 
-    const size_t nVectorsInBlock = pData->getNumberOfRows();
+  /* Get partial results from the root node */
+  ccl::broadcast(&CentroidsArchLength, 1, ccl_root, comm).wait();
 
-    /* Create an algorithm to compute k-means on local nodes */
-    kmeans::init::Distributed<step1Local, algorithmFPType, kmeans::init::randomDense> localInit(nClusters, nProcs * nVectorsInBlock,
-                                                                                                rankId * nVectorsInBlock);
+  ByteBuffer nodeCentroids(CentroidsArchLength);
+  if (isRoot)
+    inputArch.copyArchiveToArray(&nodeCentroids[0], CentroidsArchLength);
 
-    /* Set the input data set to the algorithm */
-    localInit.input.set(kmeans::init::data, pData);
+  ccl::broadcast((int8_t *)&nodeCentroids[0], CentroidsArchLength, ccl_root,
+                 comm)
+      .wait();
 
-    /* Compute k-means */
-    localInit.compute();
+  /* Deserialize centroids data */
+  OutputDataArchive outArch(nodeCentroids.size() ? &nodeCentroids[0] : NULL,
+                            CentroidsArchLength);
 
-    /* Serialize partial results required by step 2 */
-    InputDataArchive dataArch;
-    localInit.getPartialResult()->serialize(dataArch);
-    const uint64_t perNodeArchLength = (size_t)dataArch.getSizeOfArchive();
+  NumericTablePtr centroids(new HomogenNumericTable<>());
 
-    std::vector<uint64_t> aPerNodeArchLength(comm.size());
-    std::vector<size_t> aReceiveCount(comm.size(), 1);
-    /* Transfer archive length to the step 2 on the root node */
-    ccl::allgatherv(&perNodeArchLength, 1, aPerNodeArchLength.data(), aReceiveCount, comm).wait();
+  centroids->deserialize(outArch);
 
-    ByteBuffer serializedData;
-    /* Calculate total archive length */
-    int totalArchLength = 0;
-    int displs[nProcs];
-    for (size_t i = 0; i < nProcs; ++i)
-    {
-        totalArchLength += aPerNodeArchLength[i];
-    }
-    aReceiveCount[ccl_root] = totalArchLength;
+  /* Create an algorithm to compute k-means on local nodes */
+  kmeans::Distributed<step1Local> localAlgorithm(nClusters);
 
-    serializedData.resize(totalArchLength);
+  /* Set the input data set to the algorithm */
+  localAlgorithm.input.set(kmeans::data, pData);
+  localAlgorithm.input.set(kmeans::inputCentroids, centroids);
 
-    ByteBuffer nodeResults(perNodeArchLength);
-    dataArch.copyArchiveToArray(&nodeResults[0], perNodeArchLength);
+  /* Compute k-means */
+  localAlgorithm.compute();
 
-    /* Transfer partial results to step 2 on the root node */
-    ccl::allgatherv((int8_t *)&nodeResults[0], perNodeArchLength, (int8_t *)&serializedData[0], aPerNodeArchLength, comm).wait();
-    if (isRoot)
-    {
-        /* Create an algorithm to compute k-means on the master node */
-        kmeans::init::Distributed<step2Master, algorithmFPType, kmeans::init::randomDense> masterInit(nClusters);
-        for (size_t i = 0, shift = 0; i < nProcs; shift += aPerNodeArchLength[i], ++i)
-        {
-            /* Deserialize partial results from step 1 */
-            OutputDataArchive dataArch(&serializedData[shift], aPerNodeArchLength[i]);
+  /* Serialize partial results required by step 2 */
+  InputDataArchive dataArch;
+  localAlgorithm.getPartialResult()->serialize(dataArch);
+  size_t perNodeArchLength = dataArch.getSizeOfArchive();
+  ByteBuffer serializedData;
 
-            kmeans::init::PartialResultPtr dataForStep2FromStep1(new kmeans::init::PartialResult());
-            dataForStep2FromStep1->deserialize(dataArch);
+  /* Serialized data is of equal size on each node if each node called compute()
+   * equal number of times */
+  serializedData.resize(perNodeArchLength * nProcs);
 
-            /* Set local partial results as input for the master-node algorithm */
-            masterInit.input.add(kmeans::init::partialResults, dataForStep2FromStep1);
-        }
+  ByteBuffer nodeResults(perNodeArchLength);
+  dataArch.copyArchiveToArray(&nodeResults[0], perNodeArchLength);
+  std::vector<size_t> aReceiveCount(comm.size(), perNodeArchLength);
+  /* Transfer partial results to step 2 on the root node */
+  ccl::allgatherv((int8_t *)&nodeResults[0], perNodeArchLength,
+                  (int8_t *)&serializedData[0], aReceiveCount, comm)
+      .wait();
 
-        /* Merge and finalizeCompute k-means on the master node */
-        masterInit.compute();
-        masterInit.finalizeCompute();
-        return masterInit.getResult()->get(kmeans::init::centroids);
-    }
-    return NumericTablePtr();
-}
+  if (isRoot) {
+    /* Create an algorithm to compute k-means on the master node */
+    kmeans::Distributed<step2Master> masterAlgorithm(nClusters);
 
-NumericTablePtr compute(int rankId, const NumericTablePtr & pData, const NumericTablePtr & initialCentroids, ccl::communicator & comm)
-{
-    const bool isRoot            = (rankId == ccl_root);
-    uint64_t CentroidsArchLength = 0;
-    InputDataArchive inputArch;
-    if (isRoot)
-    {
-        /*Retrieve the algorithm results and serialize them */
-        initialCentroids->serialize(inputArch);
-        CentroidsArchLength = inputArch.getSizeOfArchive();
+    for (size_t i = 0; i < nProcs; i++) {
+      /* Deserialize partial results from step 1 */
+      OutputDataArchive dataArch(&serializedData[perNodeArchLength * i],
+                                 perNodeArchLength);
+
+      kmeans::PartialResultPtr dataForStep2FromStep1(
+          new kmeans::PartialResult());
+      dataForStep2FromStep1->deserialize(dataArch);
+
+      /* Set local partial results as input for the master-node algorithm */
+      masterAlgorithm.input.add(kmeans::partialResults, dataForStep2FromStep1);
     }
 
-    /* Get partial results from the root node */
-    ccl::broadcast(&CentroidsArchLength, 1, ccl_root, comm).wait();
+    /* Merge and finalizeCompute k-means on the master node */
+    masterAlgorithm.compute();
+    masterAlgorithm.finalizeCompute();
 
-    ByteBuffer nodeCentroids(CentroidsArchLength);
-    if (isRoot) inputArch.copyArchiveToArray(&nodeCentroids[0], CentroidsArchLength);
-
-    ccl::broadcast((int8_t *)&nodeCentroids[0], CentroidsArchLength, ccl_root, comm).wait();
-
-    /* Deserialize centroids data */
-    OutputDataArchive outArch(nodeCentroids.size() ? &nodeCentroids[0] : NULL, CentroidsArchLength);
-
-    NumericTablePtr centroids(new HomogenNumericTable<>());
-
-    centroids->deserialize(outArch);
-
-    /* Create an algorithm to compute k-means on local nodes */
-    kmeans::Distributed<step1Local> localAlgorithm(nClusters);
-
-    /* Set the input data set to the algorithm */
-    localAlgorithm.input.set(kmeans::data, pData);
-    localAlgorithm.input.set(kmeans::inputCentroids, centroids);
-
-    /* Compute k-means */
-    localAlgorithm.compute();
-
-    /* Serialize partial results required by step 2 */
-    InputDataArchive dataArch;
-    localAlgorithm.getPartialResult()->serialize(dataArch);
-    size_t perNodeArchLength = dataArch.getSizeOfArchive();
-    ByteBuffer serializedData;
-
-    /* Serialized data is of equal size on each node if each node called compute() equal number of times */
-    serializedData.resize(perNodeArchLength * nProcs);
-
-    ByteBuffer nodeResults(perNodeArchLength);
-    dataArch.copyArchiveToArray(&nodeResults[0], perNodeArchLength);
-    std::vector<size_t> aReceiveCount(comm.size(), perNodeArchLength);
-    /* Transfer partial results to step 2 on the root node */
-    ccl::allgatherv((int8_t *)&nodeResults[0], perNodeArchLength, (int8_t *)&serializedData[0], aReceiveCount, comm).wait();
-
-    if (isRoot)
-    {
-        /* Create an algorithm to compute k-means on the master node */
-        kmeans::Distributed<step2Master> masterAlgorithm(nClusters);
-
-        for (size_t i = 0; i < nProcs; i++)
-        {
-            /* Deserialize partial results from step 1 */
-            OutputDataArchive dataArch(&serializedData[perNodeArchLength * i], perNodeArchLength);
-
-            kmeans::PartialResultPtr dataForStep2FromStep1(new kmeans::PartialResult());
-            dataForStep2FromStep1->deserialize(dataArch);
-
-            /* Set local partial results as input for the master-node algorithm */
-            masterAlgorithm.input.add(kmeans::partialResults, dataForStep2FromStep1);
-        }
-
-        /* Merge and finalizeCompute k-means on the master node */
-        masterAlgorithm.compute();
-        masterAlgorithm.finalizeCompute();
-
-        /* Retrieve the algorithm results */
-        return masterAlgorithm.getResult()->get(kmeans::centroids);
-    }
-    return NumericTablePtr();
+    /* Retrieve the algorithm results */
+    return masterAlgorithm.getResult()->get(kmeans::centroids);
+  }
+  return NumericTablePtr();
 }
