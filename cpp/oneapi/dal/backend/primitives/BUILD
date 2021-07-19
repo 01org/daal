@@ -32,6 +32,7 @@ dal_collect_modules(
         "selection",
         "sort",
         "stat",
+        "super_accumulator",
     ],
     root = "@onedal//cpp/oneapi/dal/backend/primitives",
 )

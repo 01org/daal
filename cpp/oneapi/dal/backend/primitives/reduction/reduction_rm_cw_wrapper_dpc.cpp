@@ -26,7 +26,14 @@ template <typename Float, typename BinaryOp, typename UnaryOp>
 auto reduction_rm_cw<Float, BinaryOp, UnaryOp>::propose_method(std::int64_t width,
                                                                std::int64_t height) const
     -> reduction_method {
-    if (height >= device_max_wg_size(q_) && height > width) {
+    const auto wg = device_max_wg_size(q_);
+    if constexpr (is_sum && is_flt) {
+        constexpr int sacc_wide_folding = sacc_wide_t::max_folding;
+        if (((wg * sacc_wide_folding) >= width) && (width >= wg)) {
+            return reduction_method::super_accum_wide;
+        }
+    }
+    if ((height >= wg) && (height > width)) {
         return reduction_method::naive_local;
     }
     return reduction_method::naive;
@@ -50,6 +57,12 @@ sycl::event reduction_rm_cw<Float, BinaryOp, UnaryOp>::operator()(reduction_meth
     if (method == reduction_method::naive_local) {
         const naive_local_t kernel{ q_ };
         return kernel(input, output, width, height, stride, binary, unary, deps);
+    }
+    if constexpr (is_sum && is_flt) {
+        if (method == reduction_method::super_accum_wide) {
+            const sacc_wide_t kernel{ q_ };
+            return kernel(input, output, width, height, stride, binary, unary, deps);
+        }
     }
     ONEDAL_ASSERT(false);
     return sycl::event{};

@@ -176,6 +176,12 @@ public:
         test_raw_reduce<reduction_t>(name);
     }
 
+    void test_raw_cw_reduce_super_accum_wide() {
+        using reduction_t = reduction_rm_cw_super_accum_wide<float_t, binary_t, unary_t>;
+        const auto name = fmt::format("SuperAccumulator CW Reduction: {}", desc());
+        test_raw_reduce<reduction_t>(name);
+    }
+
     void test_raw_cw_reduce_wrapper() {
         using reduction_t = reduction_rm_cw<float_t, binary_t, unary_t>;
         const auto name = fmt::format("Wrapper CW Reduction: {}", desc());
@@ -197,6 +203,7 @@ TEMPLATE_LIST_TEST_M(reduction_rm_test_uniform,
     SKIP_IF(this->should_be_skipped());
     this->test_raw_cw_reduce_naive();
     this->test_raw_cw_reduce_naive_local();
+    this->test_raw_cw_reduce_super_accum_wide();
     this->test_raw_cw_reduce_wrapper();
 }
 
@@ -210,6 +217,7 @@ TEMPLATE_LIST_TEST_M(reduction_rm_test_uniform,
     SKIP_IF(this->should_be_skipped());
     this->test_raw_cw_reduce_naive();
     this->test_raw_cw_reduce_naive_local();
+    this->test_raw_cw_reduce_super_accum_wide();
     this->test_raw_cw_reduce_wrapper();
 }
 
