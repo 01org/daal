@@ -24,6 +24,7 @@
 #ifndef __DBSCAN_KERNEL_UCAPI_H
 #define __DBSCAN_KERNEL_UCAPI_H
 
+#include "algorithms/dbscan/dbscan_types.h"
 #include "src/algorithms/kernel.h"
 #include "data_management/data/numeric_table.h"
 #include "services/internal/sycl/execution_context.h"

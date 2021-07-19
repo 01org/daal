@@ -39,6 +39,14 @@ inline auto allocate_daal_homogen_table(std::int64_t row_count, std::int64_t col
 }
 
 template <typename Data>
+inline auto empty_daal_homogen_table(std::int64_t column_count) {
+    return daal::data_management::HomogenNumericTable<Data>::create(
+        dal::detail::integral_cast<std::size_t>(column_count),
+        dal::detail::integral_cast<std::size_t>(0),
+        daal::data_management::NumericTable::notAllocate);
+}
+
+template <typename Data>
 inline auto convert_to_daal_homogen_table(array<Data>& data,
                                           std::int64_t row_count,
                                           std::int64_t column_count,
@@ -74,6 +82,9 @@ inline daal::data_management::NumericTablePtr copy_to_daal_homogen_table(const t
 
 template <typename Data>
 inline table convert_from_daal_homogen_table(const daal::data_management::NumericTablePtr& nt) {
+    if (nt->getNumberOfRows() == 0) {
+        return table{};
+    }
     daal::data_management::BlockDescriptor<Data> block;
     const std::int64_t row_count = dal::detail::integral_cast<std::int64_t>(nt->getNumberOfRows());
     const std::int64_t column_count =

@@ -250,6 +250,10 @@ public:
     MSG(tau_leq_zero);
     MSG(epsilon_lt_zero);
     MSG(unknown_kernel_function_type);
+
+    /* DBSCAN */
+    MSG(weight_dimension_doesnt_match_data_dimension);
+    MSG(weights_column_count_ne_1);
 };
 
 #undef MSG

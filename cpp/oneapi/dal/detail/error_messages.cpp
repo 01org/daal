@@ -261,5 +261,8 @@ MSG(invalid_number_of_trees, "Invalid number of trees in model")
 MSG(invalid_number_of_classes, "Invalid number of classes")
 MSG(input_model_tree_has_invalid_size, "Input model tree size is invalid")
 
+/* DBSCAN */
+MSG(weights_column_count_ne_1, "Weights is not a single-column table")
+
 } // namespace v1
 } // namespace oneapi::dal::detail
