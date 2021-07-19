@@ -102,6 +102,13 @@ Status KMeansBatchKernel<method, algorithmFPType, cpu>::compute(const NumericTab
     DAAL_CHECK_BLOCK_STATUS(mtClusters);
     algorithmFPType * clusters = mtClusters.get();
 
+    algorithmFPType * old_clusters = new algorithmFPType[nClusters * p];
+    PRAGMA_IVDEP
+    PRAGMA_VECTOR_ALWAYS
+    for(size_t i = 0;i < nClusters * p;++i){
+        old_clusters[i] = 0;
+    }
+
     TArray<algorithmFPType, cpu> tClusters;
     if (clusters == nullptr && nIter != 0)
     {
@@ -199,7 +206,14 @@ Status KMeansBatchKernel<method, algorithmFPType, cpu>::compute(const NumericTab
                 }
             }
         }
-
+        algorithmFPType center_shift_tot = 0;
+        PRAGMA_IVDEP
+        PRAGMA_VECTOR_ALWAYS
+        for(size_t i = 0;i < nClusters * p;++i){
+            algorithmFPType tmp = clusters[i] - old_clusters[i];
+            center_shift_tot += tmp * tmp;
+            old_clusters[i] = clusters[i];
+        }
         {
             DAAL_ITTNOTIFY_SCOPED_TASK(kmeansUpdateObjectiveFunction);
             if (par->accuracyThreshold > (algorithmFPType)0.0)
@@ -209,7 +223,7 @@ Status KMeansBatchKernel<method, algorithmFPType, cpu>::compute(const NumericTab
                 task->kmeansClearClusters(&newTargetFunc);
                 newTargetFunc -= newCentersGoalFunc;
 
-                if (internal::Math<algorithmFPType, cpu>::sFabs(oldTargetFunc - newTargetFunc) < par->accuracyThreshold)
+                if (center_shift_tot < par->accuracyThreshold)
                 {
                     kIter++;
                     break;
