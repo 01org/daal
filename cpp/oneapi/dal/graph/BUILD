@@ -15,5 +15,11 @@ dal_module(
 
 dal_test_suite(
     name = "tests",
-    tests = [],
+    framework = "catch2",
+    srcs = glob([
+        "test/service_functions_test.cpp",
+    ]),
+    dal_deps = [
+        ":graph",
+    ],
 )
